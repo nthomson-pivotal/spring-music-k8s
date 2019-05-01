@@ -52,14 +52,11 @@ jobs:
         image_resource:
           type: docker-image
           source: {repository: java, tag: openjdk-8}
-
         inputs:
           - name: spring-music
-
         outputs:
           - name: build-output
             path: spring-music/build/libs
-
         run:
           dir: "spring-music"
           path: "./gradlew"
@@ -76,15 +73,18 @@ jobs:
   - name: deploy-dev
     plan:
     - get: spring-music-k8s
+    - get: spring-music
+      passed:
+        - package
     - get: spring-music-docker-image
       passed:
         - package
-      trigger: true
     - put: spring-music-helm
       params:
         release: spring-music
         chart: spring-music-k8s/helm/spring-music
+        namespace: ((kubernetes-dev-namespace))
         override_values:
         - key: image.tag
-          path: spring-music-docker-image/tag
+          path: spring-music/.git/ref
           type: string
