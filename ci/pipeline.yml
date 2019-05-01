@@ -5,6 +5,12 @@ resource_types:
     repository: zlabjp/kubernetes-resource
     tag: "1.14"
 
+- name: helm
+  type: docker-image
+  source:
+    repository: linkyard/concourse-helm-resource
+    tag: "2.12.2"
+
 resources:
 - name: spring-music
   type: git
@@ -26,13 +32,12 @@ resources:
     password: ((docker-hub-password))
     repository: ((docker-hub-username))/spring-music
 
-- name: kubernetes-dev
-  type: kubernetes
+- name: spring-music-helm
+  type: helm
   source:
-    server: ((kubernetes-dev-host))
-    namespace: ((kubernetes-dev-namespace))
+    cluster_url: ((kubernetes-dev-host))
+    cluster_ca: ((kubernetes-dev-ca-base64))
     token: ((kubernetes-dev-token))
-    certificate_authority: ((kubernetes-dev-ca))
 
 jobs:
   - name: package
@@ -63,6 +68,7 @@ jobs:
     - put: spring-music-docker-image
       params:
         build: .
+        tag: spring-music/.git/ref
         dockerfile: spring-music-k8s/Dockerfile
         build_args:
           JAR_FILE: build-output/spring-music-1.0.jar
@@ -74,21 +80,11 @@ jobs:
       passed:
         - package
       trigger: true
-    - task: render-chart
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: linkyard/concourse-helm-resource}
-        inputs:
-          - name: spring-music-k8s
-        outputs:
-          - name: kube-manifests
-            path: 
-        run:
-          path: helm
-          args: ["template", "spring-music-k8s/helm/spring-music", "-n", "dev", "--output-dir", "kube-manifests"]
-
-    - put: kubernetes-dev
+    - put: spring-music-helm
       params:
-        kubectl: apply -f kube-manifests/spring-music/templates
+        release: spring-music
+        chart: spring-music-k8s/helm/spring-music
+        override_values:
+        - key: image.tag
+          path: spring-music-docker-image/tag
+          type: string
