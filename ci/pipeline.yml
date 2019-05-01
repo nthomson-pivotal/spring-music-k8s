@@ -93,20 +93,20 @@ jobs:
           path: spring-music/.git/ref
           type: string
 
-    - name: deploy-prod
-      plan:
-      - get: spring-music-k8s
-        passed:
-          - deploy-dev
-      - get: spring-music
-        passed:
-          - deploy-dev
-      - put: spring-music-helm-prod
-        params:
-          release: spring-music-prod
-          chart: spring-music-k8s/helm/spring-music
-          namespace: ((kubernetes-prod-namespace))
-          override_values:
-          - key: image.tag
-            path: spring-music/.git/ref
-            type: string
+  - name: deploy-prod
+    plan:
+    - get: spring-music-k8s
+      passed:
+        - deploy-dev
+    - get: spring-music
+      passed:
+        - deploy-dev
+    - put: spring-music-helm-prod
+      params:
+        release: spring-music-prod
+        chart: spring-music-k8s/helm/spring-music
+        namespace: ((kubernetes-prod-namespace))
+        override_values:
+        - key: image.tag
+          path: spring-music/.git/ref
+          type: string
