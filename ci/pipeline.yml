@@ -51,12 +51,13 @@ jobs:
         dockerfile: spring-music-k8s/Dockerfile
         build_args:
           JAR_FILE: build-output/spring-music-1.0.jar
+          
   - name: deploy-dev
     plan:
     - get: spring-music-k8s
     - get: spring-music-docker-image
       passed:
-          - package
+        - package
       trigger: true
     - task: tar-chart
       config:
@@ -66,10 +67,8 @@ jobs:
           source: {repository: linkyard/concourse-helm-resource}
         inputs:
           - name: spring-music-k8s
-        outputs:
-          - name: helm-chart
-            path: spring-music-k8s/helm
+
         run:
           dir: spring-music-k8s/helm
-          path: ls
-          args: ["-la"]
+          path: helm
+          args: ["package", "."]
