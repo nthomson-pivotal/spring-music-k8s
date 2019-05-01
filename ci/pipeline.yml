@@ -32,12 +32,19 @@ resources:
     password: ((docker-hub-password))
     repository: ((docker-hub-username))/spring-music
 
-- name: spring-music-helm
+- name: spring-music-helm-dev
   type: helm
   source:
     cluster_url: ((kubernetes-dev-host))
     cluster_ca: ((kubernetes-dev-ca-base64))
     token: ((kubernetes-dev-token))
+
+- name: spring-music-helm-prod
+  type: helm
+  source:
+    cluster_url: ((kubernetes-prod-host))
+    cluster_ca: ((kubernetes-prod-ca-base64))
+    token: ((kubernetes-prod-token))
 
 jobs:
   - name: package
@@ -76,15 +83,30 @@ jobs:
     - get: spring-music
       passed:
         - package
-    - get: spring-music-docker-image
-      passed:
-        - package
-    - put: spring-music-helm
+    - put: spring-music-helm-dev
       params:
-        release: spring-music
+        release: spring-music-dev
         chart: spring-music-k8s/helm/spring-music
         namespace: ((kubernetes-dev-namespace))
         override_values:
         - key: image.tag
           path: spring-music/.git/ref
           type: string
+
+    - name: deploy-prod
+      plan:
+      - get: spring-music-k8s
+        passed:
+          - deploy-dev
+      - get: spring-music
+        passed:
+          - deploy-dev
+      - put: spring-music-helm-prod
+        params:
+          release: spring-music-prod
+          chart: spring-music-k8s/helm/spring-music
+          namespace: ((kubernetes-prod-namespace))
+          override_values:
+          - key: image.tag
+            path: spring-music/.git/ref
+            type: string
