@@ -1,29 +1,30 @@
 resources:
-  - name: spring-music
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-samples/spring-music.git
-      branch: master
+- name: spring-music
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-samples/spring-music.git
+    branch: master
 
-  - name: spring-music-k8s
-    type: git
-    source:
-      uri: https://github.com/nthomson-pivotal/spring-music-k8s.git
-      branch: master
+- name: spring-music-k8s
+  type: git
+  source:
+    uri: https://github.com/nthomson-pivotal/spring-music-k8s.git
+    branch: master
 
-  - name: spring-music-docker-image
-    type: docker-image
-    source:
-      email: ((docker-hub-email))
-      username: ((docker-hub-username))
-      password: ((docker-hub-password))
-      repository: ((docker-hub-username))/spring-music
+- name: spring-music-docker-image
+  type: docker-image
+  source:
+    email: ((docker-hub-email))
+    username: ((docker-hub-username))
+    password: ((docker-hub-password))
+    repository: ((docker-hub-username))/spring-music
 
 jobs:
   - name: package
     plan:
     - get: spring-music
       trigger: true
+    - get: spring-music-k8s
     - task: package
       privileged: true
       config:
@@ -46,6 +47,29 @@ jobs:
 
     - put: spring-music-docker-image
       params:
-        build: spring-music-k8s
+        build: .
+        dockerfile: spring-music-k8s/Dockerfile
         build_args:
           JAR_FILE: build-output/spring-music-1.0.jar
+  - name: deploy-dev
+    plan:
+    - get: spring-music-k8s
+    - get: spring-music-docker-image
+      passed:
+          - package
+      trigger: true
+    - task: tar-chart
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: linkyard/concourse-helm-resource}
+        inputs:
+          - name: spring-music-k8s
+        outputs:
+          - name: helm-chart
+            path: spring-music-k8s/helm
+        run:
+          dir: spring-music-k8s/helm
+          path: ls
+          args: ["-la"]
