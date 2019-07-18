@@ -1,17 +1,23 @@
 # Git repo containing app code
-git-repo: 
+application:
+  repo: https://github.com/cloudfoundry-samples/spring-music.git
+  branch: master
 
 # Where the Docker image will be stored
 registry:
   username: 
   password: 
-  repository: 
+  repository:
 
 # k8s cluster information
 kubernetes:
-  url: 
-  ca: 
   dev:
-    namespace: dev
+    url: 
+    ca:
+    token: 
+    namespace: 
   prod:
-    namespace: prod
+    url: 
+    ca: 
+    token: 
+    namespace:

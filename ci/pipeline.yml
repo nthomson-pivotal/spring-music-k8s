@@ -15,8 +15,8 @@ resources:
 - name: spring-music
   type: git
   source:
-    uri: ((git-repo))
-    branch: master
+    uri: ((application.repo))
+    branch: ((application.branch))
 
 - name: spring-music-k8s
   type: git
@@ -31,11 +31,19 @@ resources:
     password: ((registry.password))
     repository: ((registry.repository))
 
+- name: spring-music-helm-dev
+  type: helm
+  source:
+    cluster_url: ((kubernetes.dev.url))
+    cluster_ca: ((kubernetes.dev.ca))
+    token: ((kubernetes.dev.token))
+
 - name: spring-music-helm-prod
   type: helm
   source:
-    cluster_url: ((kubernetes.url))
-    cluster_ca: ((kubernetes.ca))
+    cluster_url: ((kubernetes.prod.url))
+    cluster_ca: ((kubernetes.prod.ca))
+    token: ((kubernetes.prod.token))
 
 jobs:
   - name: package
@@ -71,30 +79,28 @@ jobs:
   - name: deploy-dev
     plan:
     - get: spring-music-k8s
-    - get: spring-music
+    - get: spring-music-docker-image
       passed:
         - package
-    - task: package
-      privileged: true
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: {repository: linkyard/concourse-helm-resource, tag: '2.12.2'}
-        inputs:
-          - name: spring-music-k8s
-        run:
-          path: spring-music-k8s/ci/tasks/deploy.sh
-        params:
-          cluster_url: ((kubernetes.url))
-          cluster_ca: ((kubernetes.ca))
+    - put: spring-music-helm-dev
+      params:
+        release: spring-music-dev
+        chart: spring-music-k8s/helm/spring-music
+        namespace: ((kubernetes.dev.namespace))
+        override_values:
+        - key: image.repository
+          path: spring-music-docker-image/repository
+          type: string
+        - key: image.tag
+          path: spring-music-docker-image/tag
+          type: string
 
   - name: deploy-prod
     plan:
     - get: spring-music-k8s
       passed:
         - deploy-dev
-    - get: spring-music
+    - get: spring-music-docker-image
       passed:
         - deploy-dev
     - put: spring-music-helm-prod
@@ -103,6 +109,9 @@ jobs:
         chart: spring-music-k8s/helm/spring-music
         namespace: ((kubernetes.prod.namespace))
         override_values:
+        - key: image.repository
+          path: spring-music-docker-image/repository
+          type: string
         - key: image.tag
-          path: spring-music/.git/ref
+          path: spring-music-docker-image/tag
           type: string

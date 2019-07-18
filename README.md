@@ -1,7 +1,5 @@
 # Spring Music k8s
 
-Note: This branch assumes you're deploying the application to the same k8s cluster Concourse is running on
-
 This repository illustrates an example Concourse pipeline that can be used to build and deploy a Spring Boot 
 (the spring-music sample application) to Kubernetes.
 
