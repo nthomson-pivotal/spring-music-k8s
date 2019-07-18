@@ -22,7 +22,7 @@ resources:
   type: git
   source:
     uri: https://github.com/nthomson-pivotal/spring-music-k8s.git
-    branch: master
+    branch: self
 
 - name: spring-music-docker-image
   type: docker-image
