@@ -81,6 +81,8 @@ jobs:
         image_resource:
           type: docker-image
           source: {repository: linkyard/concourse-helm-resource, tag: '2.12.2'}
+        inputs:
+          - name: spring-music-k8s
         run:
           path: spring-music-k8s/ci/tasks/deploy.sh
         params:
