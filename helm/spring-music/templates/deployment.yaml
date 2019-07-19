@@ -27,7 +27,7 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-        {{- if .Values.imagePullSecret }}
-        imagePullSecrets:
-          - name: {{ .Values.imagePullSecret }}
-        {{- end }}
+      {{- if .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      {{- end }}
