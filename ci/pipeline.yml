@@ -29,7 +29,9 @@ resources:
   source:
     username: ((registry.username))
     password: ((registry.password))
-    repository: ((registry.repository))
+    repository: ((registry.address))/((registry.repository))
+    insecure_registries:
+    - ((registry.address))
 
 - name: spring-music-helm-dev
   type: helm
